@@ -80,9 +80,9 @@ class PMSReader:
 
             # Checking for uniqueness of various sections to see if any can serve as the record id...
             self.checkUniqueness(sectiona, 'a', len(records))
-            self.checkUniqueness(sectionj, 'j', len(records))
-            self.checkUniqueness(sectionl, 'l', len(records))
-            self.checkUniqueness(sectiono, 'o', len(records))
+            #self.checkUniqueness(sectionj, 'j', len(records))
+            #self.checkUniqueness(sectionl, 'l', len(records))
+            #self.checkUniqueness(sectiono, 'o', len(records))
             records.append(record)
 
             # Prime for the next iteration
@@ -97,7 +97,8 @@ class PMSReader:
         self.__uniques[section] = sectionunique
 
         if sectionunique.get(value, False):
-            print "Found duplicate value '" + str(value) + "' in section " + section + " from " + str(sectionunique[value]) + " at " + str(recordcount)
+            hex = ''.join(x.encode('hex') for x in value)
+            print "Found duplicate value {0} in section {1} from {2} at {3}".format(hex, section, str(sectionunique[value]), str(recordcount))
         else:
             sectionunique[value] = recordcount
 

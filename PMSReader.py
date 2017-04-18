@@ -33,63 +33,63 @@ class PMSReader:
     def __init__(self):
         self.__uniques = {}
 
-    def readProviderRecords(self, rawdata):
+    def read_provider_records(self, rawdata):
         # TODO
         return ''
 
     # Read patient records from a string
-    def readPatientRecordString(self, stringdata):
-        with StringIO(stringdata) as stream:
-            return self.readPatientRecordStream(stream)
+    def read_patient_record_string(self, string_data):
+        with StringIO(string_data) as stream:
+            return self.read_patient_record_stream(stream)
 
     # Read patient records from a stream
-    def readPatientRecordStream(self, rawdata):
-        print(type(rawdata))
+    def read_patient_record_stream(self, raw_data):
+        print(type(raw_data))
         # Now we're not thread safe
         self.__uniques = {}
         records = []
 
         # Ignore the header and initial padding
-        rawdata.read(PMSReader.RECORD_SIZE)
+        raw_data.read(PMSReader.RECORD_SIZE)
 
-        sectiona = rawdata.read(PMSReader.SECTION_A_SIZE)
+        sectiona = raw_data.read(PMSReader.SECTION_A_SIZE)
         while sectiona != '' and sectiona != PMSReader.PADDING_SECTION_A:
             record = PatientRecord()
-            sectionb = rawdata.read(PMSReader.SECTION_B_SIZE)
-            sectionc = rawdata.read(PMSReader.SECTION_C_SIZE)
-            sectiond = rawdata.read(PMSReader.SECTION_D_SIZE)
-            sectione = rawdata.read(PMSReader.SECTION_E_SIZE)
-            sectionf = rawdata.read(PMSReader.SECTION_F_SIZE)
-            sectiong = rawdata.read(PMSReader.SECTION_G_SIZE)
-            sectionh = rawdata.read(PMSReader.SECTION_H_SIZE)
-            sectioni = rawdata.read(PMSReader.SECTION_I_SIZE)
-            sectionj = rawdata.read(PMSReader.SECTION_J_SIZE)
-            sectionk = rawdata.read(PMSReader.SECTION_K_SIZE)
-            sectionl = rawdata.read(PMSReader.SECTION_L_SIZE)
-            sectionm = rawdata.read(PMSReader.SECTION_M_SIZE)
-            sectionn = rawdata.read(PMSReader.SECTION_N_SIZE)
-            sectiono = rawdata.read(PMSReader.SECTION_O_SIZE)
-            sectionp = rawdata.read(PMSReader.SECTION_P_SIZE)
+            sectionb = raw_data.read(PMSReader.SECTION_B_SIZE)
+            sectionc = raw_data.read(PMSReader.SECTION_C_SIZE)
+            sectiond = raw_data.read(PMSReader.SECTION_D_SIZE)
+            sectione = raw_data.read(PMSReader.SECTION_E_SIZE)
+            sectionf = raw_data.read(PMSReader.SECTION_F_SIZE)
+            sectiong = raw_data.read(PMSReader.SECTION_G_SIZE)
+            sectionh = raw_data.read(PMSReader.SECTION_H_SIZE)
+            sectioni = raw_data.read(PMSReader.SECTION_I_SIZE)
+            sectionj = raw_data.read(PMSReader.SECTION_J_SIZE)
+            sectionk = raw_data.read(PMSReader.SECTION_K_SIZE)
+            sectionl = raw_data.read(PMSReader.SECTION_L_SIZE)
+            sectionm = raw_data.read(PMSReader.SECTION_M_SIZE)
+            sectionn = raw_data.read(PMSReader.SECTION_N_SIZE)
+            sectiono = raw_data.read(PMSReader.SECTION_O_SIZE)
+            sectionp = raw_data.read(PMSReader.SECTION_P_SIZE)
 
             # Save the data we care about.
-            record.id = self.formatAsHexString(sectiona)
-            record.firstName = self.normalizeText(sectionc)
-            record.lastName = self.normalizeText(sectiond)
-            record.phone1 = self.normalizeText(sectionh)
-            record.phone2 = self.normalizeText(sectioni)
-            record.gender = self.normalizeText(sectionj)
+            record.id = self.format_as_hex_string(sectiona)
+            record.firstName = self.normalize_text(sectionc)
+            record.lastName = self.normalize_text(sectiond)
+            record.phone1 = self.normalize_text(sectionh)
+            record.phone2 = self.normalize_text(sectioni)
+            record.gender = self.normalize_text(sectionj)
             record.gender = None if not record.gender else record.gender[0]
 
             records.append(record)
 
             # Prime for the next iteration
-            sectiona = rawdata.read(PMSReader.SECTION_A_SIZE)
+            sectiona = raw_data.read(PMSReader.SECTION_A_SIZE)
 
         return records
 
-    def normalizeText(self, text):
+    def normalize_text(self, text):
         text = text.replace('\00', '').strip()
         return None if text == '' else text
 
-    def formatAsHexString(self, value):
+    def format_as_hex_string(self, value):
         return ''.join(x.encode('hex') for x in value)

@@ -1,18 +1,18 @@
 import io
+import sys
 from PMSReader import PMSReader
 
-def printPatientRecords(patientRecords):
-    for record in patientRecords:
+def print_patient_records(patient_records):
+    for record in patient_records:
         print(record)
 
-def checkForUniqueIds(patientRecords):
+def check_for_unique_ids(patient_records):
     uniqueIds = {}
     foundDuplicate = False
     recordcount = 0
-    for record in patientRecords:
+    for record in patient_records:
         if uniqueIds.get(record.id, False):
             foundDuplicate = True
-            # print "Found duplicate value {0} from record {1} at record {2}".format(record.id, str(uniqueIds[record.id]), str(recordcount))
         else:
             uniqueIds[record.id] = recordcount
         recordcount += 1
@@ -20,9 +20,9 @@ def checkForUniqueIds(patientRecords):
     print ('Found' if foundDuplicate else 'Did not find') + ' duplicate ids in the records'
 
 reader = PMSReader()
-with io.open('/Users/jschiff/nexhealth/data/patient.dat', 'rb') as patientsFile:
-    patientRecords = reader.readPatientRecordStream(patientsFile)
+with io.open(sys.argv[1], 'rb') as patients_file:
+    patientRecords = reader.read_patient_record_stream(patients_file)
 
-printPatientRecords(patientRecords)
-checkForUniqueIds(patientRecords)
+print_patient_records(patientRecords)
+check_for_unique_ids(patientRecords)
 print (len(patientRecords))

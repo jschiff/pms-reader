@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from PatientRecord import PatientRecord
 from StringIO import StringIO
-import struct
 
 
 class PMSReader:
@@ -35,6 +34,7 @@ class PMSReader:
         self.__uniques = {}
 
     def readProviderRecords(self, rawdata):
+        # TODO
         return ''
 
     # Read patient records from a string
@@ -71,36 +71,25 @@ class PMSReader:
             sectiono = rawdata.read(PMSReader.SECTION_O_SIZE)
             sectionp = rawdata.read(PMSReader.SECTION_P_SIZE)
 
-            record.id = self.extract16ByteId(sectiona)
-            record.firstName = sectionc.strip()
-            record.lastName = sectiond.strip()
-            record.phone1 = sectionh.strip()
-            record.phone2 = sectioni.strip()
-            record.gender = sectionj.strip()[0]
+            # Save the data we care about.
+            record.id = self.formatAsHexString(sectiona)
+            record.firstName = self.normalizeText(sectionc)
+            record.lastName = self.normalizeText(sectiond)
+            record.phone1 = self.normalizeText(sectionh)
+            record.phone2 = self.normalizeText(sectioni)
+            record.gender = self.normalizeText(sectionj)
+            record.gender = None if not record.gender else record.gender[0]
 
-            # Checking for uniqueness of various sections to see if any can serve as the record id...
-            self.checkUniqueness(sectiona, 'a', len(records))
-            #self.checkUniqueness(sectionj, 'j', len(records))
-            #self.checkUniqueness(sectionl, 'l', len(records))
-            #self.checkUniqueness(sectiono, 'o', len(records))
             records.append(record)
 
             # Prime for the next iteration
             sectiona = rawdata.read(PMSReader.SECTION_A_SIZE)
 
-        print('total entries: ' + str(len(records)))
-
         return records
 
-    def checkUniqueness(self, value, section, recordcount):
-        sectionunique = self.__uniques.get(section, {})
-        self.__uniques[section] = sectionunique
+    def normalizeText(self, text):
+        text = text.replace('\00', '').strip()
+        return None if text == '' else text
 
-        if sectionunique.get(value, False):
-            hex = ''.join(x.encode('hex') for x in value)
-            print "Found duplicate value {0} in section {1} from {2} at {3}".format(hex, section, str(sectionunique[value]), str(recordcount))
-        else:
-            sectionunique[value] = recordcount
-
-    def extract16ByteId(self, value):
-        return struct.unpack('QQ', value)
+    def formatAsHexString(self, value):
+        return ''.join(x.encode('hex') for x in value)

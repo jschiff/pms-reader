@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from PatientRecord import PatientRecord
+from ProviderRecord import ProviderRecord
 from StringIO import StringIO
 
 
@@ -13,27 +14,19 @@ def format_as_hex_string(value):
 
 
 class PMSReader:
-    section_lengths = [
-        # Record ID
-        16,
+    patients_data_section_lengths = [
+        16,  # Record ID
         14,
-        # First name
-        16,
-        # Middle name
-        16,
-        # Last name
-        16,
+        16,  # First name
+        16,  # Middle name
+        16,  # Last name
         16,
         82,
         11,
-        # Phone number
-        20,
-        # Also a phone number
-        19,
-        # Sometimes contains full name
-        36,
-        # ID that contains gender information
-        12,
+        20,  # Phone number
+        19,  # Also a phone number
+        36,  # Sometimes contains full name
+        12,  # ID that contains gender information
         104,
         7,
         624,
@@ -42,14 +35,35 @@ class PMSReader:
         593
     ]
 
-    PADDING_SECTION_A = '\xff' * section_lengths[0]
+    providers_data_section_lengths = [
+        13,  # Record ID
+        16,  # Last name
+        16,  # First name
+        16,  # Middle name
+        1086,  # The rest
+    ]
+
+    PADDING_SECTION_A = '\xff' * patients_data_section_lengths[0]
 
     def __init__(self):
         self.__uniques = {}
 
-    def read_provider_records(self, rawdata):
-        # TODO
-        return ''
+    def read_provider_record_string(self, string_data):
+        with StringIO(string_data) as stream:
+            return self.read_provider_record_stream(stream)
+
+    def read_provider_record_stream(self, raw_data):
+        data = self.extract_data(raw_data, PMSReader.providers_data_section_lengths)
+
+        records = []
+        for section_data in data:
+            record = ProviderRecord()
+            record.id = format_as_hex_string(section_data[0])
+            record.lastName = normalize_text(section_data[1])
+            record.firstName = normalize_text(section_data[2])
+            records.append(record)
+
+        return records
 
     # Read patient records from a string
     def read_patient_record_string(self, string_data):
@@ -58,22 +72,12 @@ class PMSReader:
 
     # Read patient records from a stream
     def read_patient_record_stream(self, raw_data):
-        print(type(raw_data))
-        # Now we're not thread safe
-        self.__uniques = {}
+        data = self.extract_data(raw_data, PMSReader.patients_data_section_lengths)
+
         records = []
-
-        # Ignore the header and initial padding by skipping one section length of data.
-        raw_data.read(sum(PMSReader.section_lengths))
-
-        section_data = [None] * len(PMSReader.section_lengths)
-        section_data[0] = raw_data.read(PMSReader.section_lengths[0])
-        while section_data[0] != '' and section_data[0] != PMSReader.PADDING_SECTION_A:
-            record = PatientRecord()
-            for i in range(1, len(PMSReader.section_lengths)):
-                section_data[i] = (raw_data.read(PMSReader.section_lengths[i]))
-
+        for section_data in data:
             # Save the data we care about.
+            record = PatientRecord()
             record.id = format_as_hex_string(section_data[0])
             record.firstName = normalize_text(section_data[2])
             record.lastName = normalize_text(section_data[4])
@@ -83,9 +87,21 @@ class PMSReader:
             record.gender = None if not record.gender else record.gender[0]
 
             records.append(record)
-
-            # Prime for the next iteration
-            section_data = [None] * len(PMSReader.section_lengths)
-            section_data[0] = raw_data.read(PMSReader.section_lengths[0])
-
         return records
+
+    def extract_data(self, raw_data, section_lengths):
+        # Ignore the header and initial padding by skipping one section length of data.
+        raw_data.read(sum(section_lengths))
+        to_return = []
+
+        while True:
+            section_data = [None] * len(section_lengths)
+            for i in range(0, len(section_lengths)):
+                section_data[i] = (raw_data.read(section_lengths[i]))
+                if section_data[i] == '':  # EOF reached
+                    return to_return
+
+            #  Don't add this record to the results if any of the sections are all 0xFF bytes
+            #  This happens notably in the middle of some of some of the provider files.
+            if not (any(all(x == '\xFF' for x in str(y[0])) for y in section_data)):
+                to_return.append(section_data)

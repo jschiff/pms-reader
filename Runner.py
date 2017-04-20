@@ -2,27 +2,33 @@ import io
 import sys
 from PMSReader import PMSReader
 
+
+def main():
+    reader = PMSReader()
+    with io.open(sys.argv[1], 'rb') as patients_file:
+        patient_records = reader.read_patient_record_stream(patients_file)
+
+    print_patient_records(patient_records)
+    check_for_unique_ids(patient_records)
+    print (len(patient_records))
+
+
 def print_patient_records(patient_records):
     for record in patient_records:
         print(record)
 
+
 def check_for_unique_ids(patient_records):
-    uniqueIds = {}
-    foundDuplicate = False
-    recordcount = 0
+    unique_ids = {}
+    found_duplicate = False
+    record_count = 0
     for record in patient_records:
-        if uniqueIds.get(record.id, False):
-            foundDuplicate = True
+        if unique_ids.get(record.id, False):
+            found_duplicate = True
         else:
-            uniqueIds[record.id] = recordcount
-        recordcount += 1
+            unique_ids[record.id] = record_count
+        record_count += 1
 
-    print ('Found' if foundDuplicate else 'Did not find') + ' duplicate ids in the records'
+    print ('Found' if found_duplicate else 'Did not find') + ' duplicate ids in the records'
 
-reader = PMSReader()
-with io.open(sys.argv[1], 'rb') as patients_file:
-    patientRecords = reader.read_patient_record_stream(patients_file)
-
-print_patient_records(patientRecords)
-check_for_unique_ids(patientRecords)
-print (len(patientRecords))
+main()

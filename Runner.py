@@ -5,8 +5,13 @@ from PMSReader import PMSReader
 
 def main():
     reader = PMSReader()
-    with io.open(sys.argv[1], 'rb') as data_file:
-        if len(sys.argv) > 2 and sys.argv[2] == 'providers':
+    if len(sys.argv) < 3:
+        print 'Usage: python Runner.py mode file\n' \
+              '    modes: d - dentist mode, p - patient mode'
+        exit(1)
+
+    with io.open(sys.argv[2], 'rb') as data_file:
+        if sys.argv[1] == 'd':
             records = reader.read_provider_record_stream(data_file)
         else:
             records = reader.read_patient_record_stream(data_file)

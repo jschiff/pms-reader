@@ -15,8 +15,8 @@ def format_as_hex_string(value):
 
 class PMSReader:
     patients_data_section_lengths = [
-        16,  # Record ID
-        14,
+        19,  # Record ID
+        11,  # Title
         16,  # First name
         16,  # Middle name
         16,  # Last name
@@ -32,7 +32,10 @@ class PMSReader:
         624,
         370,
         36,
-        593
+        244,
+        7,
+        16,  # A uuid. This could be our id
+        326
     ]
 
     providers_data_section_lengths = [
@@ -105,3 +108,29 @@ class PMSReader:
             #  This happens notably in the middle of some of some of the provider files.
             if not (any(all(x == '\xFF' for x in str(y[0])) for y in section_data)):
                 to_return.append(section_data)
+
+    #  Separates the data automatically by null bytes for analysis
+    def analyze_data(self, raw_data):
+        raw_data.read(sum(PMSReader.patients_data_section_lengths))
+
+        null = True
+        records = []
+        record_index = 1
+        while True:
+            record_data = raw_data.read(sum(PMSReader.patients_data_section_lengths))
+            if record_data == '':
+                break
+
+            sections = record_data.split('\x00')
+            secdict = {}
+            offset = 0
+            for section in sections:
+                secdict[offset + (record_index * sum(PMSReader.patients_data_section_lengths))] = section
+                offset += len(section)
+
+            secdict = {k: v for k, v in secdict.iteritems() if v != ''}
+
+            records.append(secdict)
+            record_index += 1
+
+        return records
